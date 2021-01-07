@@ -16,6 +16,7 @@
 //    Geodesics in Heat: A New Approach to Computing Distance Based on Heat Flow
 
 #include "distfunction.hpp"
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
