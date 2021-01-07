@@ -32,8 +32,10 @@ private:
    // List of true essential boundary dofs.
    Array<int> ess_tdof_list;
 
+   bool use_amgx;
+
 public:
-   DistanceFunction(ParMesh &pmesh, int order, double diff_coeff);
+   DistanceFunction(ParMesh &pmesh, int order, double diff_coeff, bool use_amgx_=false);
 
    ParGridFunction &ComputeDistance(Coefficient &level_set,
                                     int smooth_steps = 0,

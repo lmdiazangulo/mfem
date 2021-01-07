@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
    double t_param = 1.0;
    const char *device_config = "cpu";
    bool visualization = true;
+   bool use_amgx = false;
 
    OptionsParser args(argc, argv);
    args.AddOption(&mesh_file, "-m", "--mesh",
@@ -74,6 +75,8 @@ int main(int argc, char *argv[])
                   "Finite element order (polynomial degree) or -1 for"
                   " isoparametric space.");
    args.AddOption(&t_param, "-t", "--t-param", "Diffusion time step");
+   args.AddOption(&use_amgx, "-amgx", "--amgx-lib", "-no-amgx",
+                  "--no-amgx-lib", "Use AmgX in miniapp.");
    args.AddOption(&device_config, "-d", "--device",
                   "Device configuration string, see Device::Configure().");
    args.AddOption(&visualization, "-vis", "--visualization", "-no-vis",
@@ -125,7 +128,7 @@ int main(int argc, char *argv[])
       smooth_steps = 0;
       transform = true;
    }
-   DistanceFunction dist_func(pmesh, order, t_param);
+   DistanceFunction dist_func(pmesh, order, t_param, use_amgx);
    ParGridFunction &distance = dist_func.ComputeDistance(*ls_coeff,
                                                          smooth_steps, transform);
    const ParGridFunction &src = dist_func.GetLastSourceGF(),

@@ -13,11 +13,12 @@
 
 using namespace mfem;
 
-DistanceFunction::DistanceFunction(ParMesh &pmesh, int order, double diff_coeff)
+DistanceFunction::DistanceFunction(ParMesh &pmesh, int order,
+                                   double diff_coeff, bool use_amgx_)
    : fec(order, pmesh.Dimension()),
      pfes(&pmesh, &fec),
      distance(&pfes), source(&pfes), diffused_source(&pfes),
-     t_param(diff_coeff)
+     t_param(diff_coeff), use_amgx(use_amgx_)
 {
    // Compute average mesh size (assumes similar cells).
    double loc_area = 0.0;
@@ -80,6 +81,25 @@ void DiffuseField(ParGridFunction &field, int smooth_steps)
    delete Lap;
 }
 
+Solver * GetPrecondtioner(bool use_amgx)
+{
+  Solver *prec; bool amgx_verbosity(false);
+#if defined(MFEM_USE_AMGX)
+  if(use_amgx) {
+    prec = new AmgXSolver(MPI_COMM_WORLD,
+                          AmgXSolver::PRECONDITIONER,
+                          amgx_verbosity);
+  }else {
+    prec = new HypreBoomerAMG;
+  }
+#else
+  if(use_amgx) {mfem_error("AMGX not enabled \n");}
+  prec = new HypreBoomerAMG;
+#endif
+
+    return prec;
+}
+
 ParGridFunction &DistanceFunction::ComputeDistance(Coefficient &level_set,
                                                    int smooth_steps,
                                                    bool transform)
@@ -128,7 +148,7 @@ ParGridFunction &DistanceFunction::ComputeDistance(Coefficient &level_set,
       ParGridFunction u_dirichlet(&pfes);
       u_dirichlet = 0.0;
       a1.FormLinearSystem(ess_tdof_list, u_dirichlet, b1, A, X, B);
-      Solver *prec = new HypreBoomerAMG;
+      Solver *prec = GetPrecondtioner(use_amgx);
       cg.SetPreconditioner(*prec);
       cg.SetOperator(*A);
       cg.Mult(B, X);
@@ -145,7 +165,9 @@ ParGridFunction &DistanceFunction::ComputeDistance(Coefficient &level_set,
       ParGridFunction u_neumann(&pfes);
       ess_tdof_list.DeleteAll();
       a_n.FormLinearSystem(ess_tdof_list, u_neumann, b1, A, X, B);
-      Solver *prec2 = new HypreBoomerAMG;
+
+      Solver *prec2 = GetPrecondtioner(use_amgx);
+
       cg.SetPreconditioner(*prec2);
       cg.SetOperator(*A);
       cg.Mult(B, X);
@@ -177,7 +199,7 @@ ParGridFunction &DistanceFunction::ComputeDistance(Coefficient &level_set,
 
       a2.FormLinearSystem(no_ess_tdofs, distance, b2, A, X, B);
 
-      Solver *prec2 = new HypreBoomerAMG;
+      Solver *prec2 = GetPrecondtioner(use_amgx);
       cg.SetPreconditioner(*prec2);
       cg.SetOperator(*A);
       cg.Mult(B, X);
