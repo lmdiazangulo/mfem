@@ -47,7 +47,7 @@ void MakeConforming(GridFunction &sol)
 {
     FiniteElementSpace* fes = sol.FESpace();
     const SparseMatrix* P = fes->GetConformingProlongation();
-    const SparseMatrix* Q = fes->GetConformingRestrictionInterpolation();
+    const SparseMatrix* Q = fes->GetHpConformingRestriction();
     if (P)
     {
         Vector X;
