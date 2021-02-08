@@ -18,15 +18,11 @@ CONFIG_MK = $(MFEM_BUILD_DIR)/config/config.mk
 # MFEM_INSTALL_DIR = ../../mfem
 # CONFIG_MK = $(MFEM_INSTALL_DIR)/share/mfem/config.mk
 
-# Include defaults.mk to get XLINKER
-DEFAULTS_MK = $(MFEM_DIR)/config/defaults.mk
-include $(DEFAULTS_MK)
-
 MFEM_LIB_FILE = mfem_is_not_built
 -include $(CONFIG_MK)
 
-SHIFTED_COMMON_SRC = dist_solver.cpp
-SHIFTED_COMMON_OBJ = $(SHIFTED_COMMON_SRC:.cpp=.o)
+SHIFTEDBC_COMMON_SRC = dist_solver.cpp
+SHIFTEDBC_COMMON_OBJ = $(SHIFTEDBC_COMMON_SRC:.cpp=.o)
 
 PAR_MINIAPPS = distance
 
@@ -36,54 +32,27 @@ else
    MINIAPPS = $(PAR_MINIAPPS)
 endif
 
-COMMON_LIB = -L$(MFEM_BUILD_DIR)/miniapps/common -lmfem-common
-
-# If MFEM_SHARED is set, add the ../common rpath
-COMMON_LIB += $(if $(MFEM_SHARED:YES=),,\
-   $(if $(MFEM_USE_CUDA:YES=),$(CXX_XLINKER),$(CUDA_XLINKER))-rpath,$(abspath\
-   $(MFEM_BUILD_DIR)/miniapps/common))
-
 .SUFFIXES:
 .SUFFIXES: .o .cpp .mk
-.PHONY: all lib-common clean clean-build clean-exec
+.PHONY: all clean clean-build clean-exec
 
-# Remove built-in rule
+# Remove built-in rules
 %: %.cpp
+%.o: %.cpp
 
-# Replace the default implicit rule for *.cpp files
-%: $(SRC)%.cpp $(MFEM_LIB_FILE) $(CONFIG_MK) | lib-common $(SHIFTED_COMMON_OBJ) 
-	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(COMMON_LIB) $(MFEM_LIBS) $(SHIFTED_COMMON_OBJ)
-	
+%: $(SRC)%.cpp $(SHIFTEDBC_COMMON_OBJ)
+	$(MFEM_CXX) $(MFEM_LINK_FLAGS) $< -o $@ $(SHIFTEDBC_COMMON_OBJ) $(MFEM_LIBS)
+
 %.o: $(SRC)%.cpp $(MFEM_LIB_FILE) $(CONFIG_MK)
 	$(MFEM_CXX) $(MFEM_FLAGS) -c $< -o $@
 
 all: $(MINIAPPS)
 
-distance: distance.cpp dist_solver.o $(MFEM_LIB_FILE) $(CONFIG_MK) | lib-common
-	$(MFEM_CXX) $(MFEM_FLAGS) $< -o $@ $(COMMON_LIB) $(MFEM_LIBS) dist_solver.o
-
-# Rule for building lib-common
-lib-common:
-	$(MAKE) -C $(MFEM_BUILD_DIR)/miniapps/common
-
-MFEM_TESTS = MINIAPPS
+PAR_TEST_EXECS = 
+MFEM_TESTS = TEST_EXECS
 include $(MFEM_TEST_MK)
 
-# Testing: Parallel vs. serial runs
 RUN_MPI = $(MFEM_MPIEXEC) $(MFEM_MPIEXEC_NP) $(MFEM_MPI_NP)
-TEST_NAME := ShiftedBC
-%-test-par: %
-	@$(call mfem-test,$<, $(RUN_MPI), $(TEST_NAME))
-%-test-seq: %
-	@$(call mfem-test,$<,, $(TEST_NAME))
-
-# Testing: Specific execution options
-mesh-explorer-test-seq:
-	@true
-shaper-test-seq:
-	@true
-
-# Testing: "test" target and mfem-test* variables are defined in config/test.mk
 
 # Generate an error message if the MFEM library is not built and exit
 $(MFEM_LIB_FILE):
@@ -92,8 +61,8 @@ $(MFEM_LIB_FILE):
 clean: clean-build clean-exec
 
 clean-build:
-	rm -f *.o *~ distance cutH1
+	rm -f *.o *~ $(PAR_MINIAPPS)
 	rm -rf *.dSYM *.TVD.*breakpoints
 
 clean-exec:
-	@rm -f mobius-strip.mesh
+	@rm -rf tgv_out*.txt *_output
