@@ -51,6 +51,7 @@ void DistanceSolver::ScalarDistToVector(ParGridFunction &dist_s,
    ParGridFunction der(&pfes);
    Vector magn(size);
    magn = 0.0;
+   dist_s.HostReadWrite();
    for (int d = 0; d < dim; d++)
    {
       dist_s.GetDerivative(1, d, der);
@@ -96,7 +97,7 @@ void HeatDistanceSolver::ComputeScalarDistance(Coefficient &zero_level_set,
                "This solver supports only scalar H1 spaces.");
 
    // Compute average mesh size (assumes similar cells).
-   double dx, loc_area = 0.0;
+   double dx = 0.0, loc_area = 0.0;
    ParMesh &pmesh = *pfes.GetParMesh();
    for (int i = 0; i < pmesh.GetNE(); i++)
    {
@@ -204,13 +205,16 @@ void HeatDistanceSolver::ComputeScalarDistance(Coefficient &zero_level_set,
       a_n.RecoverFEMSolution(X, b, u_neumann);
       delete prec2;
 
+      const double *h_u_dirichlet = u_dirichlet.HostRead();
+      const double *h_u_neumann = u_neumann.HostRead();
+      double *h_diffused_source = diffused_source.HostWrite();
       for (int i = 0; i < diffused_source.Size(); i++)
       {
          // This assumes that the magnitudes of the two solutions are somewhat
          // similar; otherwise one of the solutions would dominate and the BC
          // won't look correct. To avoid this, it's good to have the source
          // away from the boundary (i.e. have more resolution).
-         diffused_source(i) = 0.5 * (u_neumann(i) + u_dirichlet(i));
+         h_diffused_source[i] = 0.5 * (h_u_neumann[i] + h_u_dirichlet[i]);
       }
       source = diffused_source;
    }
