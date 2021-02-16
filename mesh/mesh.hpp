@@ -499,6 +499,8 @@ public:
    /// Move constructor, useful for using a Mesh as a function return value.
    Mesh(Mesh &&mesh);
 
+   /// Move assignment operstor.
+   Mesh& operator=(Mesh &&mesh);
 
    /** @name Named mesh constructors.
 

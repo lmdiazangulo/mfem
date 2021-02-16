@@ -3250,13 +3250,23 @@ Mesh::Mesh(Mesh &&mesh)
    Swap(mesh, true);
 
    // Should this be moved to Mesh::Swap?
-   sequence = mesh.sequence;
-   last_operation = mesh.last_operation;
    for (int g=0; g<Geometry::NumGeom; ++g)
    {
       CoarseFineTr.point_matrices[g].Swap(mesh.CoarseFineTr.point_matrices[g]);
    }
    mfem::Swap(CoarseFineTr.embeddings, mesh.CoarseFineTr.embeddings);
+}
+
+Mesh& Mesh::operator=(Mesh &&mesh)
+{
+   Swap(mesh, true);
+   // Should this be moved to Mesh::Swap?
+   for (int g=0; g<Geometry::NumGeom; ++g)
+   {
+      CoarseFineTr.point_matrices[g].Swap(mesh.CoarseFineTr.point_matrices[g]);
+   }
+   mfem::Swap(CoarseFineTr.embeddings, mesh.CoarseFineTr.embeddings);
+   return *this;
 }
 
 Mesh Mesh::MakeCartesian1D(int n, double sx)
@@ -8434,6 +8444,9 @@ void Mesh::Swap(Mesh& other, bool non_geometry)
 
       mfem::Swap(Nodes, other.Nodes);
       mfem::Swap(own_nodes, other.own_nodes);
+
+      mfem::Swap(sequence, other.sequence);
+      mfem::Swap(last_operation, other.last_operation);
    }
 }
 
