@@ -3248,13 +3248,12 @@ Mesh::Mesh(Mesh &&mesh)
    Init();
    InitTables();
    Swap(mesh, true);
+}
 
-   // Should this be moved to Mesh::Swap?
-   for (int g=0; g<Geometry::NumGeom; ++g)
-   {
-      CoarseFineTr.point_matrices[g].Swap(mesh.CoarseFineTr.point_matrices[g]);
-   }
-   mfem::Swap(CoarseFineTr.embeddings, mesh.CoarseFineTr.embeddings);
+Mesh& Mesh::operator=(Mesh &&mesh)
+{
+   Swap(mesh, true);
+   return *this;
 }
 
 Mesh& Mesh::operator=(Mesh &&mesh)
@@ -8444,6 +8443,8 @@ void Mesh::Swap(Mesh& other, bool non_geometry)
 
       mfem::Swap(Nodes, other.Nodes);
       mfem::Swap(own_nodes, other.own_nodes);
+
+      mfem::Swap(CoarseFineTr, other.CoarseFineTr);
 
       mfem::Swap(sequence, other.sequence);
       mfem::Swap(last_operation, other.last_operation);
