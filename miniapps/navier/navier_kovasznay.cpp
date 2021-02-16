@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
    }
 
    Mesh *mesh = new Mesh(Mesh::MakeCartesian2D(
-      2, 4, Element::QUADRILATERAL, false, 1.5, 2.0));
+                            2, 4, Element::QUADRILATERAL, false, 1.5, 2.0));
 
    mesh->EnsureNodes();
    GridFunction *nodes = mesh->GetNodes();
