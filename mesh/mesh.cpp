@@ -3256,18 +3256,6 @@ Mesh& Mesh::operator=(Mesh &&mesh)
    return *this;
 }
 
-Mesh& Mesh::operator=(Mesh &&mesh)
-{
-   Swap(mesh, true);
-   // Should this be moved to Mesh::Swap?
-   for (int g=0; g<Geometry::NumGeom; ++g)
-   {
-      CoarseFineTr.point_matrices[g].Swap(mesh.CoarseFineTr.point_matrices[g]);
-   }
-   mfem::Swap(CoarseFineTr.embeddings, mesh.CoarseFineTr.embeddings);
-   return *this;
-}
-
 Mesh Mesh::MakeCartesian1D(int n, double sx)
 {
    Mesh mesh;
@@ -4037,7 +4025,7 @@ void Mesh::MakeSimplicial_(const Mesh &orig_mesh, int *vglobal)
 {
    MFEM_VERIFY(const_cast<Mesh&>(orig_mesh).CheckElementOrientation(false) == 0,
                "Mesh::MakeSimplicial requires a properly oriented input mesh");
-   MFEM_VERIFY(orig_mesh.ncmesh == NULL,
+   MFEM_VERIFY(orig_mesh.Conforming(),
                "Mesh::MakeSimplicial does not support non-conforming meshes.")
 
    int dim = orig_mesh.Dimension();
@@ -4615,25 +4603,6 @@ void Mesh::EnsureNodes()
    else // First order H1 mesh
    {
       SetCurvature(1, false, -1, Ordering::byVDIM);
-   }
-}
-
-void Mesh::SetVerticesFromNodes()
-{
-   if (!Nodes) { return; }
-   for (int iel=0; iel<GetNE(); ++iel)
-   {
-      Geometry::Type geom = GetElementBaseGeometry(iel);
-      const IntegrationRule *ref_verts = Geometries.GetVertices(geom);
-      DenseMatrix node_coords;
-      ElementTransformation *T = GetElementTransformation(iel);
-      Nodes->GetVectorValues(*T, *ref_verts, node_coords);
-      Element *el = GetElement(iel);
-      for (int iv=0; iv<el->GetNVertices(); ++iv)
-      {
-         int v = el->GetVertices()[iv];
-         vertices[v].SetCoords(node_coords.Height(), &node_coords(0,iv));
-      }
    }
 }
 
