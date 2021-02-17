@@ -49,7 +49,9 @@
 // Sample runs:
 //
 //   Current source in a sphere with absorbing boundary conditions:
-//     mpirun -np 4 maxwell -m ../../data/ball-nurbs.mesh -rs 2 -abcs '-1' -dp '-0.3 0.0 0.0 0.3 0.0 0.0 0.1 1 .5 .5'
+//     mpirun -np 4 maxwell -m ../../data/ball-nurbs.mesh -rs 2
+//                          -abcs '-1'
+//                          -dp '-0.3 0.0 0.0 0.3 0.0 0.0 0.1 1 .5 .5'
 //
 //   Current source in a metal sphere with dielectric and conducting materials:
 //     mpirun -np 4 maxwell -m ../../data/ball-nurbs.mesh -rs 2
@@ -59,7 +61,9 @@
 //                          -ds '0.0 0.0 0.5 .2 10'
 //
 //   Current source in a metal box:
-//     mpirun -np 4 maxwell -m ../../data/fichera.mesh -rs 3 -ts 0.25 -tf 10 -dbcs '-1' -dp '-0.5 -0.5 0.0 -0.5 -0.5 1.0 0.1 1 .5 1'
+//     mpirun -np 4 maxwell -m ../../data/fichera.mesh -rs 3
+//                          -ts 0.25 -tf 10 -dbcs '-1'
+//                          -dp '-0.5 -0.5 0.0 -0.5 -0.5 1.0 0.1 1 .5 1'
 //
 //   Current source with a mixture of absorbing and reflecting boundaries:
 //     mpirun -np 4 maxwell -m ../../data/fichera.mesh -rs 3

@@ -34,6 +34,12 @@ if (MFEM_USE_MPI)
    EXTRA_HEADERS maxwell_solver.hpp ${MFEM_MINIAPPS_COMMON_HEADERS}
    LIBRARIES mfem mfem-common)
 
+ add_mfem_miniapp(maxwell2d
+   MAIN maxwell2d.cpp
+   maxwell_solver.cpp
+   EXTRA_HEADERS maxwell_solver.hpp ${MFEM_MINIAPPS_COMMON_HEADERS}
+   LIBRARIES mfem mfem-common)
+
   # Add the corresponding tests to the "test" target
   add_test(NAME tesla_np=4
     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MFEM_MPI_NP}
