@@ -55,10 +55,13 @@ double u0_function(const Vector& x)
 {
 
     // map to the reference [-1,1] domain
-    double center = (bb_min[0] + bb_max[0]) * 0.5;
-    double X = 2 * (x[0] - center) / (bb_max[0] - bb_min[0]);
+    Vector X(2);
+    for (size_t i = 0; i < 2; i++) {
+        double center = (bb_min[i] + bb_max[i]) * 0.5;
+        X[i] = 2 * (x[i] - center) / (bb_max[0] - bb_min[0]);
+    }
 
-    return exp(-40. * (pow(X, 2)));
+    return exp(-40. * (pow(X[0], 2) + pow(X[1], 2)));
 }
 
 int main(int argc, char *argv[])
@@ -133,31 +136,42 @@ int main(int argc, char *argv[])
    //    DG discretization. The DGTraceIntegrator involves integrals over mesh
    //    interior faces.
    ConstantCoefficient zero(0.0), one(1.0), mOne(-1.0);
-   Vector nxVec(2);  nxVec(0)  =  1.0; nxVec(1)  = 0.0;
-   VectorConstantCoefficient nx(nxVec);
+   Vector nxVec(2);  nxVec(0) = 1.0; nxVec(1) = 0.0;
+   Vector nyVec(2);  nyVec(0) = 0.0; nyVec(1) = 1.0;
+   VectorConstantCoefficient nx(nxVec), ny(nyVec);
          
-   BilinearForm MInv(&fes), Kx(&fes);
+   BilinearForm MInv(&fes), Kx(&fes), Ky(&fes);
       
    MInv.AddDomainIntegrator(new InverseIntegrator(new MassIntegrator));
    
    double alpha = -1.0, beta = 0.0;
+   
    Kx.AddDomainIntegrator(new ConvectionIntegrator(nx));
    Kx.AddInteriorFaceIntegrator(
        new TransposeIntegrator(new DGTraceIntegrator(nx, alpha, beta)));
    Kx.AddBdrFaceIntegrator(
        new TransposeIntegrator(new DGTraceIntegrator(nx, alpha, beta)));
+   
+   Ky.AddDomainIntegrator(new ConvectionIntegrator(ny));
+   Ky.AddInteriorFaceIntegrator(
+       new TransposeIntegrator(new DGTraceIntegrator(ny, alpha, beta)));
+   Ky.AddBdrFaceIntegrator(
+       new TransposeIntegrator(new DGTraceIntegrator(ny, alpha, beta)));
          
    MInv.Assemble();
    int skip_zeros = 0; 
    Kx.Assemble(skip_zeros);
+   Ky.Assemble(skip_zeros);
     
    MInv.Finalize();
    Kx.Finalize(skip_zeros);
+   Ky.Finalize(skip_zeros);
    
    FunctionCoefficient ez0(u0_function);
-   GridFunction e(&fes), h(&fes);
-   e.ProjectCoefficient(ez0);
-   h.ProjectCoefficient(zero);
+   GridFunction ez(&fes), hx(&fes), hy(&fes);
+   ez.ProjectCoefficient(ez0);
+   hx.ProjectCoefficient(zero);
+   hy.ProjectCoefficient(zero);
    
    // Create data collection for solution output: either VisItDataCollection for
    // ascii data files, or SidreDataCollection for binary data files.
@@ -166,8 +180,9 @@ int main(int argc, char *argv[])
    {
       pd = new ParaViewDataCollection("Example9", &mesh);
       pd->SetPrefixPath("ParaView");
-      pd->RegisterField("h", &h);
-      pd->RegisterField("e", &e);
+      pd->RegisterField("ez", &ez);
+      pd->RegisterField("hx", &hx);
+      pd->RegisterField("hy", &hy);
       pd->SetLevelsOfDetail(order);
       pd->SetDataFormat(VTKFormat::BINARY);
       pd->SetHighOrderOutput(true);
@@ -182,25 +197,32 @@ int main(int argc, char *argv[])
    double t = 0.0;
    
    Vector aux(fes.GetVSize());
-   Vector eNew(fes.GetVSize()), hNew(fes.GetVSize());
+   Vector ezNew(fes.GetVSize()), hxNew(fes.GetVSize()), hyNew(fes.GetVSize());
 
    bool done = false;
    for (int ti = 0; !done; )
    {
       double dt_real = min(dt, t_final - t);
       
-      Kx.Mult(h, aux);
-      MInv.Mult(aux, eNew);
-      eNew *= -dt;
-      eNew.Add(1.0, e);
+      Kx.Mult(hy, aux);
+      Ky.AddMult(hx, aux, -1.0);
+      MInv.Mult(aux, ezNew);
+      ezNew *= -dt;
+      ezNew.Add(1.0, ez);
 
-      Kx.Mult(eNew, aux);
-      MInv.Mult(aux, hNew);
-      hNew *= -dt;
-      hNew.Add(1.0, h);
+      Kx.Mult(ezNew, aux);
+      MInv.Mult(aux, hyNew);
+      hyNew *= -dt;
+      hyNew.Add(1.0, hy);
 
-      e = eNew;
-      h = hNew;
+      Ky.Mult(ezNew, aux);
+      MInv.Mult(aux, hxNew);
+      hxNew *= dt;
+      hxNew.Add(1.0, hx);
+
+      ez = ezNew;
+      hx = hxNew;
+      hy = hyNew;
 
       t += dt;
       ti++;
