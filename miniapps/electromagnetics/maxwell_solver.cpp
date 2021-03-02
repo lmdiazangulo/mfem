@@ -611,7 +611,7 @@ MaxwellSolver::DisplayToGLVis()
    char vishost[] = "localhost";
    int  visport   = 19916;
 
-   int Wx = 0, Wy = 0; // window position
+   int Wx = 50, Wy = 50; // window position
    int Ww = 350, Wh = 350; // window size
    int offx = Ww+10, offy = Wh+45; // window offsets
 

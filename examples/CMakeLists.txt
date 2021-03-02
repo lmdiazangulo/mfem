@@ -19,6 +19,7 @@ list(APPEND ALL_EXE_SRCS
   ex7.cpp
   ex8.cpp
   ex9.cpp
+  ex9_maxwell.cpp
   ex10.cpp
   ex14.cpp
   ex15.cpp
